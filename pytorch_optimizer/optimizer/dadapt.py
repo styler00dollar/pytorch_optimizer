@@ -665,11 +665,21 @@ class DAdaptAdan(Optimizer, BaseOptimizer):
 
         if sk_l1 == 0:
             return loss
+                    
+        if g_sq.get_device() == 0 and gsq_weighted.get_device() == -1:
+            gsq_weighted = gsq_weighted.cuda()
 
         gsq_weighted.mul_(beta3).add_(g_sq, alpha=(d_lr ** 2) * (1.0 - beta3))  # fmt: skip
 
         if lr > 0.0:
+            if sk_sq_weighted.get_device() == 0 and sk_l1.get_device() == 0 and gsq_weighted.get_device() == -1:
+                gsq_weighted = gsq_weighted.cuda()
+
             d_hat = (sk_sq_weighted / (1.0 - beta3) - gsq_weighted) / sk_l1
+
+            if d.get_device() == -1 and d_hat.get_device() == 0:
+                d = d.cuda()
+
             d = max(d, min(d_hat, d * growth_rate))
 
         for group in self.param_groups:
