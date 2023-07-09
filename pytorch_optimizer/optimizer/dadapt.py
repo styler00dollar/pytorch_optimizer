@@ -610,6 +610,13 @@ class DAdaptAdan(Optimizer, BaseOptimizer):
         growth_rate = group['growth_rate']
 
         d, lr = group['d'], group['lr']
+
+        if isinstance(d, float):
+            d = torch.tensor(d)
+
+        if d.get_device() == -1:
+            d = d.cuda()
+
         d_lr = float(d * lr)
 
         g_sq = torch.tensor([0.0], device=group['params'][0].device)
@@ -676,9 +683,6 @@ class DAdaptAdan(Optimizer, BaseOptimizer):
                 gsq_weighted = gsq_weighted.cuda()
 
             d_hat = (sk_sq_weighted / (1.0 - beta3) - gsq_weighted) / sk_l1
-
-            if d.get_device() == -1 and d_hat.get_device() == 0:
-                d = d.cuda()
 
             d = max(d, min(d_hat, d * growth_rate))
 
